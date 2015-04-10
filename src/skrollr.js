@@ -67,7 +67,7 @@
 	var rxTrim = /^\s+|\s+$/g;
 
 	//Find all data-attributes. data-[_constant]-[offset]-[anchor]-[anchor].
-	var rxKeyframeAttribute = /^data(?:-(_\w+))?(?:-?(-?\d*\.?\d+p?))?(?:-?(start|end|top|center|bottom))?(?:-?(top|center|bottom))?$/;
+	var rxKeyframeAttribute = /^data(?:-(_\w+))?(?:-?(-?\d*\.?\d+(?:p|ep)?))?(?:-?(start|end|top|center|bottom))?(?:-?(top|center|bottom))?$/;
 
 	var rxPropValue = /\s*(@?[\w\-\[\]]+)\s*:\s*(.+?)\s*(?:;|$)/gi;
 
@@ -407,6 +407,7 @@
 
 				var match = attr.name.match(rxKeyframeAttribute);
 
+
 				if(match === null) {
 					continue;
 				}
@@ -431,10 +432,16 @@
 				//Get the key frame offset.
 				var offset = match[2];
 
+				//Is it an element percentage offset?
+				if ((/ep$/.test(offset))) {
+					kf.isElementPercentage = true;
+					kf.offset = (offset.slice(0, -2) | 0) / 100;
+
 				//Is it a percentage offset?
-				if(/p$/.test(offset)) {
+				} else if (/p$/.test(offset)) {
 					kf.isPercentage = true;
 					kf.offset = (offset.slice(0, -1) | 0) / 100;
+
 				} else {
 					kf.offset = (offset | 0);
 				}
@@ -451,7 +458,7 @@
 					//data-end needs to be calculated after all key frames are known.
 					if(anchor1 === ANCHOR_END) {
 						kf.isEnd = true;
-					} else if(!kf.isPercentage) {
+					} else if(!kf.isPercentage && !kf.isElementPercentage) {
 						//For data-start we can already set the key frame w/o calculations.
 						//#59: "scale" options should only affect absolute mode.
 						kf.offset = kf.offset * _scale;
@@ -861,6 +868,20 @@
 				if(kf.isPercentage) {
 					//Convert the offset to percentage of the viewport height.
 					offset = offset * viewportHeight;
+
+					//Absolute + percentage mode.
+					kf.frame = offset;
+				}
+
+				if(kf.isElementPercentage) {
+					if (anchorTarget) {
+						var box = anchorTarget.getBoundingClientRect();
+					} else {
+						var box = element.getBoundingClientRect();
+					}
+
+					//Convert the offset to percentage of the element height.
+					offset = offset * (box.bottom - box.top);
 
 					//Absolute + percentage mode.
 					kf.frame = offset;
