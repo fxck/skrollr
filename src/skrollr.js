@@ -874,10 +874,12 @@
 				}
 
 				if(kf.isElementPercentage) {
+					var box;
+
 					if (anchorTarget) {
-						var box = anchorTarget.getBoundingClientRect();
+						box = anchorTarget.getBoundingClientRect();
 					} else {
-						var box = element.getBoundingClientRect();
+						box = element.getBoundingClientRect();
 					}
 
 					//Convert the offset to percentage of the element height.
